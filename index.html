@@ -351,12 +351,13 @@
             <div class="profile-info-row"><div class="profile-info-key">Physical</div><div class="profile-info-val">Exercise (+1), Yoga (+1)</div></div>
             <div class="profile-info-row"><div class="profile-info-key">Mental</div><div class="profile-info-val">Wake 4AM (+1), Exercise (+1), Meditation (+1)</div></div>
             <div class="profile-info-row"><div class="profile-info-key">Metacognition</div><div class="profile-info-val">Meditation (+1), Journal (+1), Yoga (+1)</div></div>
-            <div class="profile-info-row"><div class="profile-info-key">Intelligence</div><div class="profile-info-val">Learn Something New (+1), IITM Class (+1)</div></div>
-            <div class="profile-info-row"><div class="profile-info-key">Consistency</div><div class="profile-info-val">All 7 done → <strong style="color:var(--green)">+2, +30 XP</strong>. Miss any → <strong style="color:var(--red)">−1</strong> at reset.</div></div>
+            <div class="profile-info-row"><div class="profile-info-key">Intelligence</div><div class="profile-info-val">Learn (+1), IITM Class (+1), Reading (+1), Programming (+1)</div></div>
+            <div class="profile-info-row"><div class="profile-info-key">Metacognition</div><div class="profile-info-val">Meditation (+1), Journal (+1), Yoga (+1), Personal Duties (+1)</div></div>
+            <div class="profile-info-row"><div class="profile-info-key">Consistency</div><div class="profile-info-val">All 10 done → <strong style="color:var(--green)">+2, +30 XP</strong>. Miss any → <strong style="color:var(--red)">−1</strong> at reset.</div></div>
           </div>
           <div class="profile-info-section">
             <div class="profile-info-heading">XP & Levels</div>
-            <div class="profile-info-val" style="font-size:12px;line-height:1.7">Each activity = <strong style="color:var(--accent)">10 XP</strong>. All 7 done = extra <strong style="color:var(--accent)">+30 XP</strong>. XP scales ×1.18/level. Max level <strong style="color:var(--accent)">99</strong>.</div>
+            <div class="profile-info-val" style="font-size:12px;line-height:1.7">Each activity = <strong style="color:var(--accent)">10 XP</strong>. All 10 done = extra <strong style="color:var(--accent)">+30 XP</strong>. XP scales ×1.18/level. Max level <strong style="color:var(--accent)">99</strong>.</div>
           </div>
           <div class="profile-info-section">
             <div class="profile-info-heading">Grade Thresholds</div>
@@ -376,7 +377,7 @@
           </div>
           <div class="profile-info-section">
             <div class="profile-info-heading">Streak & Consistency</div>
-            <div class="profile-info-val" style="font-size:12px;line-height:1.7">Streak counts consecutive perfect days. Miss any ritual → streak resets to 0 at 2AM. Consistency stat: +2 on perfect day (all 7), −1 if missed.</div>
+            <div class="profile-info-val" style="font-size:12px;line-height:1.7">Streak counts consecutive perfect days. Miss any ritual → streak resets to 0 at 2AM. Consistency stat: +2 on perfect day (all 10), −1 if missed.</div>
           </div>
         </div>
       </div>
@@ -507,6 +508,9 @@ const ACTIVITIES = [
   { id:'yoga',       label:'30 min Yoga',                pts:10, xp:10, stats:{physical:1, metacog:1} },
   { id:'learn',      label:'30 min Learn Something New', pts:10, xp:10, stats:{intelligence:1} },
   { id:'iitm',       label:'30 min IITM Class',          pts:10, xp:10, stats:{intelligence:1} },
+  { id:'read',       label:'20 min Reading',             pts:10, xp:10, stats:{intelligence:1, mental:1} },
+  { id:'duties',     label:'Personal Duties',            pts:10, xp:10, stats:{metacog:1} },
+  { id:'coding',     label:'30 min Programming',         pts:10, xp:10, stats:{intelligence:1} },
 ];
 // Consistency: +2 stat / +30 XP bonus when ALL 6 done; -1 stat if missed at reset.
 
