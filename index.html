@@ -246,7 +246,7 @@
         <span class="streak-num" id="streakNum">0</span>
         <span class="streak-label">day streak</span>
       </div>
-      <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)" id="streakSub">Complete all 6 rituals to keep it going</span>
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)" id="streakSub">Complete all 10 rituals to keep it going</span>
     </div>
   </div>
   <div class="header-right">
@@ -265,7 +265,7 @@
       <div id="activityList"></div>
       <div class="progress-bar-wrap">
         <div class="progress-bar-top">
-          <span id="doneCount">0 / 6 done</span>
+          <span id="doneCount">0 / 10 done</span>
           <span id="earnedToday">+0 pts today</span>
         </div>
         <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
@@ -307,6 +307,17 @@
       <div class="empty-state" id="todoEmpty">No tasks yet. Add something above.</div>
       <div id="todoGroups"></div>
     </div>
+
+    <div class="col-title" style="margin-top:4px">Journal Log</div>
+<div class="card">
+  <div class="learn-log-header">
+    <div class="learn-log-title-text">📓 Past Entries</div>
+    <span class="learn-log-count" id="journalLogCount">0 entries</span>
+  </div>
+  <div class="learn-log-list" id="journalLogList">
+    <div class="learn-log-empty" id="journalLogEmpty">No entries yet.</div>
+  </div>
+</div>
   </div>
 
   <!-- ── COL 3: CHARACTER PROFILE + STORE + NOTES ── -->
@@ -505,14 +516,14 @@ const ACTIVITIES = [
   { id:'exercise',   label:'20 min Exercise',            pts:10, xp:10, stats:{physical:1, mental:1} },
   { id:'meditation', label:'20 min Meditation',          pts:10, xp:10, stats:{mental:1, metacog:1} },
   { id:'journal',    label:'20 min Journal',             pts:10, xp:10, stats:{metacog:1}, needsTimer:true },
-  { id:'yoga',       label:'30 min Yoga',                pts:10, xp:10, stats:{physical:1, metacog:1} },
+  { id:'yoga',       label:'20 min Yoga',                pts:10, xp:10, stats:{physical:1, metacog:1} },
   { id:'learn',      label:'30 min Learn Something New', pts:10, xp:10, stats:{intelligence:1} },
   { id:'iitm',       label:'30 min IITM Class',          pts:10, xp:10, stats:{intelligence:1} },
   { id:'read',       label:'20 min Reading',             pts:10, xp:10, stats:{intelligence:1, mental:1} },
   { id:'duties',     label:'Personal Duties',            pts:10, xp:10, stats:{metacog:1} },
   { id:'coding',     label:'30 min Programming',         pts:10, xp:10, stats:{intelligence:1} },
 ];
-// Consistency: +2 stat / +30 XP bonus when ALL 6 done; -1 stat if missed at reset.
+// Consistency: +1 stat / +50 XP bonus when ALL 10 done; -1 stat if missed at reset.
 
 const STATS = [
   { key:'physical',     label:'Physical Ability',  color:'#e06b6b' },
@@ -566,46 +577,54 @@ function getData(){
 // ════════════════════════════════════════════════
 //  DAILY RESET — 2AM
 // ════════════════════════════════════════════════
-function checkDailyReset(){
-  const now=new Date();
-  const d=getData();
-  const todayKey=now.toISOString().split('T')[0];
-  // Only reset when it's a new day AND past 2AM
-  if(d.lastReset!==todayKey && now.getHours()>=2){
-    const prevChecked=d.dailyChecked;
-    const allDone=ACTIVITIES.every(a=>prevChecked[a.id]);
+function localDateStr(d){
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
 
-    if(d.lastReset){ // not first ever launch
-      if(allDone){
-        // Perfect day: streak continues
-        if(d.lastStreakDate){
-          const yesterday=new Date(now); yesterday.setDate(yesterday.getDate()-1);
-          const yKey=yesterday.toISOString().split('T')[0];
-          if(d.lastStreakDate===yKey || d.lastStreakDate===d.lastReset){
-            d.streak=(d.streak||0)+1;
-          } else {
-            d.streak=1; // gap in days
-          }
-        } else {
-          d.streak=1;
-        }
-        d.lastStreakDate=d.lastReset;
-      } else {
-        // Missed day — penalty
-        if(d.consistencyPenaltyAppliedFor!==d.lastReset){
-          d.stats.consistency=Math.max(0,(d.stats.consistency||0)-1);
-          d.consistencyPenaltyAppliedFor=d.lastReset;
-        }
-        d.streak=0;
-      }
-    }
-
-    d.dailyChecked={};
-    d.lastReset=todayKey;
-    saveData(d);
-    renderStreak();
-    renderLevel();
+function sessionKey(now){
+  if(now.getHours() < 2){
+    const prev = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    return localDateStr(prev);
   }
+  return localDateStr(now);
+}
+
+function checkDailyReset(){
+  const now = new Date();
+  const d = getData();
+  const key = sessionKey(now);
+
+  if(d.lastReset === key) return;
+
+  const prevChecked = d.dailyChecked;
+  const allDone = ACTIVITIES.every(a => prevChecked[a.id]);
+
+  if(d.lastReset){
+    if(allDone){
+      if(d.lastStreakDate === d.lastReset){
+        d.streak = (d.streak || 0) + 1;
+      } else {
+        d.streak = 1;
+      }
+      d.lastStreakDate = d.lastReset;
+    } else {
+      if(d.consistencyPenaltyAppliedFor !== d.lastReset){
+        d.stats.consistency = Math.max(0, (d.stats.consistency || 0) - 1);
+        d.consistencyPenaltyAppliedFor = d.lastReset;
+      }
+      d.streak = 0;
+    }
+  }
+
+  d.dailyChecked = {};
+  d.lastReset = key;
+  saveData(d);
+  renderStreak();
+  renderLevel();
+  renderActivities();
 }
 
 // ════════════════════════════════════════════════
@@ -620,7 +639,7 @@ function renderStreak(){
   if(streak===0){
     badge.className='streak-badge broken';
     document.querySelector('.streak-fire').textContent='❄️';
-    sub.textContent='Complete all 6 rituals to start a streak';
+    sub.textContent='Complete all 10 rituals to start a streak';
   } else if(streak>=30){
     badge.className='streak-badge';
     document.querySelector('.streak-fire').textContent='💥';
@@ -632,7 +651,7 @@ function renderStreak(){
   } else {
     badge.className='streak-badge';
     document.querySelector('.streak-fire').textContent='🔥';
-    sub.textContent='Complete all 6 rituals to keep it going';
+    sub.textContent='Complete all 10 rituals to keep it going';
   }
 }
 
@@ -792,11 +811,11 @@ function toggleActivity(id, pts, wasDone){
     // Check if all 6 now done → consistency bonus
     const d2=getData();
     if(ACTIVITIES.every(a=>d2.dailyChecked[a.id])){
-      d2.totalXP+=30;
-      d2.stats.consistency=(d2.stats.consistency||0)+2;
+      d2.totalXP+=50;
+      d2.stats.consistency=(d2.stats.consistency||0)+1;
       saveData(d2);
       renderLevel();
-      showToast('🏆 All 6 done! +2 Consistency, +30 XP bonus','positive');
+      showToast('🏆 All 10 done! +1 Consistency, +50 XP bonus','positive');
     }
   }
   renderActivities();
@@ -844,24 +863,37 @@ function finishJournal(){
   document.getElementById('journalTimer').textContent='00:00';
   document.getElementById('journalProgressFill').style.width='100%';
   document.getElementById('journalDoneMsg').style.display='block';
-  showToast('📓 20 min journal done! +15 pts','positive');
-  toggleActivity('journal',15,false);
+  showToast('📓 20 min journal done! +10 pts','positive');
+  toggleActivity('journal',10,false);
 }
 
+
+
 function saveJournalEntry(){
-  const body=document.getElementById('journalTextarea').value.trim();
-  if(!body){showToast('Nothing written yet','');return;}
-  const d=getData();
-  const now=new Date();
-  d.journalEntries.push({
-    id:Date.now(),
-    date:now.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}),
-    time:now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
-    title:document.getElementById('journalTitleInput').value.trim()||'Untitled',
-    body,completed:jCompleted
+  const body = document.getElementById('journalTextarea').value.trim();
+  if(!body){ showToast('Nothing written yet', ''); return; }
+
+  const d = getData();
+  const now = new Date();
+  d.journalEntries.unshift({
+    id: Date.now(),
+    date: now.toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'}),
+    time: now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}),
+    title: document.getElementById('journalTitleInput').value.trim() || 'Untitled',
+    body,
+    completed: jCompleted
   });
   saveData(d);
-  showToast('Entry saved ✓','positive');
+
+  closeJournal();
+
+  const d2 = getData();
+  if(!d2.dailyChecked['journal']){
+    toggleActivity('journal', 10, false);
+  }
+
+  showToast('📓 Journal saved! +10 pts', 'positive');
+  renderJournalLog();
 }
 
 function closeJournal(){clearInterval(jInterval);document.getElementById('journalModal').classList.remove('open');}
@@ -870,6 +902,46 @@ document.getElementById('journalTextarea').addEventListener('input',()=>{
   const w=document.getElementById('journalTextarea').value.trim().split(/\s+/).filter(Boolean).length;
   document.getElementById('journalWordCount').textContent=w+' word'+(w!==1?'s':'');
 });
+
+function renderJournalLog(){
+  const d = getData();
+  const list = document.getElementById('journalLogList');
+  const empty = document.getElementById('journalLogEmpty');
+  const count = document.getElementById('journalLogCount');
+  const entries = d.journalEntries || [];
+  
+  // Show most recent first
+  const sorted = [...entries].sort((a,b) => b.id - a.id);
+  
+  count.textContent = sorted.length + ' entr' + (sorted.length === 1 ? 'y' : 'ies');
+  
+  if(!sorted.length){
+    empty.style.display = 'block';
+    list.innerHTML = '';
+    list.appendChild(empty);
+    return;
+  }
+  
+  list.innerHTML = '';
+  empty.style.display = 'none';
+  list.appendChild(empty);
+  
+  sorted.forEach(e => {
+    const item = document.createElement('div');
+    item.className = 'learn-log-item'; // reuse same styles
+    item.innerHTML = `
+      <div class="learn-log-item-top">
+        <div class="learn-log-item-name">${escHtml(e.title)}</div>
+        <div class="learn-log-item-date">${e.date}</div>
+      </div>
+      ${e.body
+        ? `<div class="learn-log-item-preview">${escHtml(e.body.slice(0,80))}${e.body.length > 80 ? '…' : ''}</div>`
+        : ''}
+    `;
+    item.onclick = () => openViewEntry({ topic: e.title, notes: e.body, date: e.date, time: e.time });
+    list.appendChild(item);
+  });
+}
 
 // ════════════════════════════════════════════════
 //  LEARN MODAL
@@ -902,7 +974,7 @@ function saveLearnEntry(){
   saveData(d);
   closeLearn();
   renderLearnLog();
-  toggleActivity('learn',15,false);
+  toggleActivity('learn',10,false);
 }
 
 function closeLearn(){document.getElementById('learnModal').classList.remove('open');}
@@ -1125,6 +1197,7 @@ renderStore();
 renderPoints();
 renderLevel();
 renderLearnLog();
+renderJournalLog();
 initNotes();
 document.getElementById('todoDate').value=new Date().toISOString().split('T')[0];
 setInterval(()=>{checkDailyReset();renderDate();},60000);
